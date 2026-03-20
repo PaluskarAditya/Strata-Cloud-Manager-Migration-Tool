@@ -3,469 +3,507 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SCM Migration · backup import</title>
-    <!-- Tailwind (sharp reset) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>SCM Migration Tool | Palo Alto Networks</title>
+    <link rel="shortcut icon" href="/images/favicon.svg" type="image/x-icon" />
     <style>
-      /* force zero rounding everywhere, simple blocky aesthetics */
       * {
-        border-radius: 0 !important;
-      }
-      /* subtle transition for opacity & background (fast UX feedback) */
-      button,
-      select,
-      input[type="file"] {
-        transition:
-          opacity 0.1s ease,
-          background-color 0.1s ease,
-          border-color 0.1s ease;
-      }
-      button:active {
-        opacity: 0.75;
-      }
-      /* custom spinner – pure css, no rounding */
-      .sharp-spinner {
-        display: inline-block;
-        width: 1rem;
-        height: 1rem;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        border-top: 2px solid white;
-        animation: spin 0.7s linear infinite;
-        margin-right: 6px;
-        vertical-align: middle;
+        margin: 0;
+        padding: 0;
         box-sizing: border-box;
       }
+
+      body {
+        background: #ffcb06;
+        background-image: url("/images/home-bg.png");
+        background-size: cover;
+        font-family: "Lato", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+
+      .card {
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        padding: 2.8rem 2.5rem;
+        width: 420px;
+        max-width: 460px;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
+        border-radius: 4px;
+      }
+
+      .image-div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 5rem;
+      }
+
+      .title {
+        font-size: 2.6rem;
+        font-weight: 700;
+        color: #111;
+        line-height: 1.1;
+      }
+
+      .subtitle {
+        font-size: 1.1rem;
+        color: #444;
+        margin-top: 0.15rem;
+        margin-bottom: 2rem;
+      }
+
+      .field {
+        margin-bottom: 1.2rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.92rem;
+        color: #555;
+        margin-bottom: 0.45rem;
+        font-weight: 400;
+      }
+
+      /* file input */
+      .file-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1.5px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.88rem;
+        font-family: inherit;
+        color: #111;
+        background: #fff;
+        outline: none;
+        cursor: pointer;
+        transition: border-color 0.15s;
+      }
+      .file-input:focus {
+        border-color: #2563eb;
+      }
+      .file-input.valid {
+        border-color: #0990d0;
+      }
+      .file-input::file-selector-button {
+        border: none;
+        background: #f3f4f6;
+        padding: 0.3rem 0.75rem;
+        margin-right: 0.75rem;
+        font-size: 0.8rem;
+        font-family: inherit;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #374151;
+        font-weight: 500;
+      }
+
+      /* select dropdown */
+      .select-wrap {
+        position: relative;
+      }
+
+      select {
+        width: 100%;
+        padding: 0.78rem 2.5rem 0.78rem 1rem;
+        border: 1.5px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.92rem;
+        font-family: inherit;
+        color: #111;
+        background: #fff;
+        outline: none;
+        appearance: none;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      select:focus {
+        border-color: #0990d0;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+      select.valid {
+        border-color: #0990d0;
+      }
+      select:disabled {
+        background: #f9fafb;
+        color: #aaa;
+        cursor: not-allowed;
+      }
+
+      .select-arrow {
+        position: absolute;
+        right: 0.9rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #9ca3af;
+      }
+
+      /* hint line */
+      .hint {
+        font-size: 0.8rem;
+        color: #888;
+        margin-top: 0.35rem;
+        min-height: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .hint.success {
+        color: #0990d0;
+      }
+      .hint.error {
+        color: #dc2626;
+      }
+
+      /* spinner (inline, small) */
+      .spinner {
+        display: inline-block;
+        width: 0.85rem;
+        height: 0.85rem;
+        border: 2px solid #ddd;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        flex-shrink: 0;
+      }
       @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
+        to {
           transform: rotate(360deg);
         }
       }
-      /* hidden utility with fast fade (no slide) */
-      .fade-hidden {
-        opacity: 0;
-        visibility: hidden;
-        transition:
-          opacity 0.12s ease,
-          visibility 0s 0.12s;
+
+      /* device badge in dropdown option */
+      .device-meta {
+        font-size: 0.75rem;
+        color: #6b7280;
       }
-      .fade-visible {
+
+      /* import button */
+      .import-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        font-family: inherit;
+        font-weight: 400;
+        white-space: nowrap;
+        border: 1px solid transparent;
+        padding: 10px 24px;
+        font-size: 14px;
+        line-height: 1em;
+        border-radius: 5rem;
+        height: 36px;
+        min-width: 100px;
+        color: #fff;
+        background-color: #0ba4e8;
+        cursor: pointer;
+        opacity: 0.45;
+        pointer-events: none;
+        transition:
+          background 0.15s,
+          opacity 0.15s;
+      }
+      .import-btn.ready {
         opacity: 1;
-        visibility: visible;
-        transition:
-          opacity 0.12s ease,
-          visibility 0s 0s;
+        pointer-events: auto;
       }
-      /* file input cosmetics – sharp, no background */
-      .file-input-clear {
-        border: 1px solid #000;
-        background: #fff;
-        padding: 0.5rem;
-        font-size: 0.75rem;
-        width: 100%;
+      .import-btn.ready:hover {
+        background: #0990d0;
       }
-      .file-input-clear::file-selector-button {
-        border: 1px solid #000;
-        background: #fff;
-        padding: 0.25rem 0.5rem;
-        margin-right: 0.75rem;
-        font-size: 0.7rem;
-        box-shadow: none;
-        transition: background 0.1s;
-        border-radius: 0;
+      .import-btn.ready:active {
+        background: #077bb2;
       }
-      .file-input-clear::file-selector-button:active {
-        background: #e5e5e5;
+      .import-btn.loading {
+        pointer-events: none;
       }
-      /* select / button sharp style */
-      .sharp-select {
-        border: 1px solid #000;
-        background: #fff;
-        padding: 0.5rem;
-        font-size: 0.75rem;
-        width: 100%;
-        appearance: none;
-        /* simple arrow (no fancy) */
-        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="square" stroke-linejoin="square"><polyline points="6 9 12 15 18 9"/></svg>');
-        background-repeat: no-repeat;
-        background-position: right 0.5rem center;
-        background-size: 1rem;
+
+      .btn-spinner {
+        display: none;
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
       }
-      .sharp-btn {
-        border: 1px solid #000;
-        background: #fff;
-        padding: 0.5rem;
-        font-size: 0.75rem;
-        width: 100%;
-        font-weight: normal;
-        cursor: default; /* will be overridden but consistent */
-        transition:
-          background 0.1s,
-          border 0.1s;
+
+      /* status */
+      .status {
+        font-size: 0.85rem;
+        color: #555;
+        min-height: 1.2rem;
+        margin-bottom: 1rem;
         text-align: center;
       }
-      .sharp-btn.primary {
-        background: #000;
-        color: #fff;
-        border: 1px solid #000;
+      .status.error {
+        color: #dc2626;
       }
-      .sharp-btn.primary:active {
-        background: #333;
+      .status.success {
+        color: #0990d0;
       }
-      .sharp-btn:active {
-        background: #f0f0f0;
+
+      /* footer */
+      .footer {
+        text-align: center;
+        font-size: 0.9rem;
+        color: #555;
+        border-top: 1px solid #f0f0f0;
+        padding-top: 1.2rem;
       }
-      .disabled-like {
-        opacity: 0.5;
-        pointer-events: none;
-        border-color: #aaa;
+      .footer a {
+        color: #111;
+        font-weight: 700;
+        text-decoration: none;
       }
-      /* minimal card */
-      .sharp-card {
-        background: white;
-        border: 1px solid #000;
-        box-shadow: 4px 4px 0 #000;
-        padding: 1rem;
+      .footer a:hover {
+        text-decoration: underline;
       }
-      body {
-        background: #f3f3f3;
-      }
-      hr {
-        border: 0.5px solid #000;
-        margin: 0.5rem 0;
+      .login-btn-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin-top: 0.5rem;
       }
     </style>
   </head>
-  <body
-    class="flex h-screen justify-center items-center bg-[#ececec] font-sans antialiased"
-  >
-    <div class="sharp-card w-full max-w-xs text-xs flex flex-col gap-3">
-      <div class="flex justify-between items-center">
-        <h1 class="text-base font-bold uppercase tracking-wide">
-          Backup import
-        </h1>
-        <span class="text-[9px] border border-black px-1 py-0.5 bg-white"
-          >SCM</span
-        >
-      </div>
-      <hr />
-
-      <!-- FILE INPUT AREA (always visible, sharp) -->
-      <div>
-        <label class="block mb-1 font-medium text-[0.7rem] uppercase"
-          >1. choose backup</label
-        >
-        <input
-          type="file"
-          id="backupFile"
-          accept=".xml"
-          class="file-input-clear"
-        />
+  <body>
+    <div class="card">
+      <div class="image-div">
+        <img src="/images/home-logo.png" alt="Palo Alto Networks" />
       </div>
 
-      <!-- DEVICE DROPDOWN + loading indicator inline (simple) -->
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <label class="block font-medium text-[0.7rem] uppercase"
-            >2. target device</label
-          >
-          <div
-            id="deviceLoader"
-            class="fade-hidden inline-flex items-center gap-1 text-[0.6rem]"
-          >
-            <span
-              class="sharp-spinner border-black border-t-black/30"
-              style="border-color: #555; border-top-color: #111"
-            ></span>
-            <span>loading</span>
-          </div>
+      <!-- Step 1: File -->
+      <div class="field">
+        <label for="backupFile">Backup file (.xml)</label>
+        <input type="file" id="backupFile" accept=".xml" class="file-input" />
+        <div id="fileHint" class="hint">
+          Choose an .xml backup file to continue
         </div>
-        <select id="deviceSelect" class="sharp-select fade-hidden">
-          <option value="">— select device —</option>
-        </select>
-        <!-- tiny hint (optional) -->
-        <p id="deviceHint" class="text-[0.6rem] mt-1 text-gray-600 fade-hidden">
-           
-        </p>
       </div>
 
-      <!-- IMPORT BUTTON (sharp + loading state) -->
-      <button
-        id="importBtn"
-        class="sharp-btn primary fade-hidden relative flex justify-center items-center gap-2"
-      >
-        <span id="importBtnText">Import backup</span>
-        <span id="importSpinner" class="sharp-spinner fade-hidden"></span>
-      </button>
-
-      <!-- subtle status line (no alerts) -->
-      <div
-        id="statusMsg"
-        class="text-[0.65rem] border-t border-black pt-1 mt-1 min-h-[1.5rem]"
-      >
-        ​<!-- blank using zero-width space -->​
-      </div>
-
-      <div class="flex items-center justify-centerw-full gap-2 mt-4">
-        <p class="text-[0.6rem] text-gray-600">
-          Made with passion by
-          <span class="font-medium text-black"
-            ><a href="https://github.com/PaluskarAditya" target="_blank"
-              >@aid3n</a
-            ></span
+      <!-- Step 2: Folder / Device -->
+      <div class="field">
+        <label for="deviceSelect">Target folder</label>
+        <div class="select-wrap">
+          <select id="deviceSelect" disabled>
+            <option value="">— select folder —</option>
+          </select>
+          <svg
+            class="select-arrow"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           >
-        </p>
-        <img src="/images/pfp.png" class="h-[30px] w-[30px]" />
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
+        <div id="deviceHint" class="hint">
+          Upload a file first to load folders
+        </div>
+      </div>
+
+      <div id="statusMsg" class="status"></div>
+
+      <!-- Import button -->
+      <div class="login-btn-wrapper">
+        <button id="importBtn" class="import-btn" disabled>
+          <span id="btnText">Import backup</span>
+          <span class="btn-spinner" id="btnSpinner"></span>
+        </button>
       </div>
     </div>
+    <!-- <div class="footer">
+      Made by
+      <a href="https://github.com/PaluskarAditya" target="_blank">@aid3n</a>
+    </div> -->
 
-    <script type="module">
-      // === DOM refs ===
-      const fileInput = document.getElementById("backupFile");
-      const deviceSelect = document.getElementById("deviceSelect");
-      const importBtn = document.getElementById("importBtn");
-      const deviceLoader = document.getElementById("deviceLoader");
-      const deviceHint = document.getElementById("deviceHint");
-      const importSpinner = document.getElementById("importSpinner");
-      const importBtnText = document.getElementById("importBtnText");
-      const statusDiv = document.getElementById("statusMsg");
+    <script>
+      (function () {
+        const fileInput = document.getElementById("backupFile");
+        const deviceSelect = document.getElementById("deviceSelect");
+        const importBtn = document.getElementById("importBtn");
+        const btnText = document.getElementById("btnText");
+        const btnSpinner = document.getElementById("btnSpinner");
+        const fileHint = document.getElementById("fileHint");
+        const deviceHint = document.getElementById("deviceHint");
+        const statusDiv = document.getElementById("statusMsg");
 
-      // === state ===
-      let devicesCache = [];
-      let isLoadingDevices = false;
-      let isImporting = false;
+        let isLoadingDevices = false;
+        let isImporting = false;
 
-      // helper: update UI visibility/classes (pure fade)
-      function setComponentVisibility() {
-        // device select visibility: only if devices exist and not loading
-        const hasDevices = devicesCache.length > 0;
-        if (hasDevices && !isLoadingDevices) {
-          deviceSelect.classList.remove("fade-hidden");
-          deviceSelect.classList.add("fade-visible");
-          deviceHint.innerText = `${devicesCache.length} device(s) · click to select`;
-          deviceHint.classList.remove("fade-hidden");
-          deviceHint.classList.add("fade-visible");
-        } else {
-          deviceSelect.classList.remove("fade-visible");
-          deviceSelect.classList.add("fade-hidden");
-          if (!isLoadingDevices) {
-            deviceHint.innerText = "no devices available";
-            deviceHint.classList.remove("fade-hidden");
-            deviceHint.classList.add("fade-visible");
-          } else {
-            deviceHint.classList.remove("fade-visible");
-            deviceHint.classList.add("fade-hidden");
+        function setStatus(msg, type = "") {
+          statusDiv.textContent = msg;
+          statusDiv.className = "status" + (type ? " " + type : "");
+        }
+        function clearAfter(ms) {
+          setTimeout(() => {
+            if (!isImporting) setStatus("");
+          }, ms);
+        }
+
+        function updateImportBtn() {
+          const ready =
+            fileInput.files.length > 0 &&
+            deviceSelect.value &&
+            !isImporting &&
+            !isLoadingDevices;
+          importBtn.classList.toggle("ready", ready);
+          importBtn.disabled = !ready;
+        }
+
+        function setLoading(on) {
+          isImporting = on;
+          btnSpinner.style.display = on ? "inline-block" : "none";
+          btnText.textContent = on ? "Importing…" : "Import backup \u00a0→";
+          importBtn.classList.toggle("loading", on);
+          fileInput.disabled = on;
+          deviceSelect.disabled = on;
+          updateImportBtn();
+        }
+
+        // ── File change → fetch devices ──
+        fileInput.addEventListener("change", async () => {
+          const file = fileInput.files[0];
+          if (!file) {
+            fileHint.textContent = "Choose an .xml backup file to continue";
+            fileHint.className = "hint";
+            fileInput.classList.remove("valid");
+            deviceSelect.innerHTML =
+              '<option value="">— select folder —</option>';
+            deviceSelect.disabled = true;
+            deviceHint.textContent = "Upload a file first to load folders";
+            deviceHint.className = "hint";
+            updateImportBtn();
+            setStatus("");
+            return;
           }
-        }
 
-        // loader visibility
-        if (isLoadingDevices) {
-          deviceLoader.classList.remove("fade-hidden");
-          deviceLoader.classList.add("fade-visible");
-        } else {
-          deviceLoader.classList.remove("fade-visible");
-          deviceLoader.classList.add("fade-hidden");
-        }
+          fileInput.classList.add("valid");
+          fileHint.innerHTML = "<span>✓</span> " + file.name;
+          fileHint.className = "hint success";
 
-        // import button visibility: only if device selected AND not importing
-        const deviceSelected = deviceSelect.value && deviceSelect.value !== "";
-        if (deviceSelected && !isImporting) {
-          importBtn.classList.remove("fade-hidden");
-          importBtn.classList.add("fade-visible");
-        } else {
-          importBtn.classList.remove("fade-visible");
-          importBtn.classList.add("fade-hidden");
-        }
-
-        // import button loading indicator
-        if (isImporting) {
-          importSpinner.classList.remove("fade-hidden");
-          importSpinner.classList.add("fade-visible");
-          importBtnText.innerText = "Importing";
-          importBtn.style.pointerEvents = "none";
-          importBtn.style.opacity = "0.7";
-        } else {
-          importSpinner.classList.remove("fade-visible");
-          importSpinner.classList.add("fade-hidden");
-          importBtnText.innerText = "Import backup";
-          importBtn.style.pointerEvents = "";
-          importBtn.style.opacity = "";
-        }
-
-        // file input disabled look during import (disable visually)
-        if (isImporting) {
-          fileInput.setAttribute("disabled", "disabled");
-          fileInput.classList.add("disabled-like");
-        } else {
-          fileInput.removeAttribute("disabled");
-          fileInput.classList.remove("disabled-like");
-        }
-      }
-
-      // show status (vanilla, no alert)
-      function setStatus(msg, isError = false) {
-        statusDiv.innerText = msg;
-        statusDiv.style.color = isError ? "#a00" : "#000";
-      }
-
-      // clear status after a few sec (optional)
-      function clearStatusAfter(delay = 3000) {
-        setTimeout(() => {
-          if (statusDiv.innerText !== "") statusDiv.innerText = "";
-        }, delay);
-      }
-
-      // === step 1: file change → fetch devices (with loader) ===
-      fileInput.addEventListener("change", async () => {
-        if (fileInput.files.length === 0) {
-          // no file: reset device list?
-          devicesCache = [];
-          deviceSelect.innerHTML =
-            '<option value="">— select device —</option>';
-          setComponentVisibility();
+          // show loading state in dropdown
+          isLoadingDevices = true;
+          deviceSelect.disabled = true;
+          deviceSelect.innerHTML = '<option value="">Loading folders…</option>';
+          deviceHint.innerHTML =
+            '<span class="spinner"></span> Fetching folders…';
+          deviceHint.className = "hint";
+          updateImportBtn();
           setStatus("");
-          return;
-        }
 
-        // show immediate feedback
-        setStatus(`File: ${fileInput.files[0].name}`);
-        isLoadingDevices = true;
-        setComponentVisibility();
-
-        try {
-          const response = await fetch("/api/v1/get-devices", {
-            method: "GET",
-            credentials: "include",
-          });
-
-          const data = await response.json();
-
-          if (!data || data.length === 0) {
-            devicesCache = [];
-            deviceSelect.innerHTML =
-              '<option value="">— none available —</option>';
-            setStatus("No devices found", true);
-          } else {
-            devicesCache = data;
-            // populate dropdown
-            deviceSelect.innerHTML =
-              '<option value="">— select device —</option>';
-            data.forEach((device) => {
-              const option = document.createElement("option");
-              option.value = device.serial_number;
-              option.textContent = `${device.display_name || "?"} (${device.serial_number})`;
-              deviceSelect.appendChild(option);
+          try {
+            const res = await fetch("/api/v1/get-devices", {
+              method: "GET",
+              credentials: "include",
             });
-            setStatus(`Loaded ${data.length} device(s)`);
-            clearStatusAfter(2000);
-          }
-        } catch (err) {
-          console.error(err);
-          devicesCache = [];
-          deviceSelect.innerHTML = '<option value="">— error —</option>';
-          setStatus("Failed to fetch devices", true);
-          clearStatusAfter(2500);
-        } finally {
-          isLoadingDevices = false;
-          setComponentVisibility();
+            const data = await res.json();
 
-          // if after load a device was previously selected (rare), but we keep it simple
-          if (deviceSelect.value) {
-            // already selected, show import if possible
-          }
-        }
-      });
+            deviceSelect.innerHTML =
+              '<option value="">— select folder —</option>';
 
-      // === step 2: device select → update import button visibility (already in setComponentVisibility) ===
-      deviceSelect.addEventListener("change", () => {
-        setComponentVisibility();
-        if (deviceSelect.value) {
-          setStatus(`Target: ${deviceSelect.value}`);
-          clearStatusAfter(1800);
-        } else {
+            if (!data || data.length === 0) {
+              deviceHint.textContent = "No folders available";
+              deviceHint.className = "hint error";
+            } else {
+              // Populate using response shape: { id, name, parent, type, labels[] }
+              data.forEach((folder) => {
+                const opt = document.createElement("option");
+                opt.value = folder.name;
+                // Format: "NTIL-FIREWALLS  (ngfw-shared · NTIPL)"
+                const label =
+                  folder.labels && folder.labels.length
+                    ? folder.labels.join(", ")
+                    : "";
+                opt.textContent =
+                  folder.name +
+                  (folder.parent || label
+                    ? "  (" +
+                      [folder.parent, label].filter(Boolean).join(" · ") +
+                      ")"
+                    : "");
+                deviceSelect.appendChild(opt);
+              });
+              deviceSelect.disabled = false;
+              deviceHint.textContent =
+                data.length +
+                " folder" +
+                (data.length > 1 ? "s" : "") +
+                " available";
+              deviceHint.className = "hint success";
+            }
+          } catch (err) {
+            console.error(err);
+            deviceSelect.innerHTML =
+              '<option value="">— error loading —</option>';
+            deviceHint.textContent = "Failed to load folders";
+            deviceHint.className = "hint error";
+          } finally {
+            isLoadingDevices = false;
+            updateImportBtn();
+          }
+        });
+
+        // ── Device select change ──
+        deviceSelect.addEventListener("change", () => {
+          updateImportBtn();
           setStatus("");
-        }
-      });
+        });
 
-      // === step 3: import backup with loading / animation ===
-      importBtn.addEventListener("click", async () => {
-        const file = fileInput.files[0];
-        const selectedDevice = deviceSelect.value;
+        // ── Import ──
+        importBtn.addEventListener("click", async () => {
+          const file = fileInput.files[0];
+          const selectedId = deviceSelect.value;
+          if (!file || !selectedId || isImporting) return;
 
-        if (!file || !selectedDevice) {
-          setStatus("Missing file or device", true);
-          clearStatusAfter(2000);
-          return;
-        }
+          setLoading(true);
+          setStatus("Uploading backup…");
 
-        // start import UI
-        isImporting = true;
-        setComponentVisibility();
-        setStatus("Starting import...");
+          const form = new FormData();
+          form.append("backup", file);
+          form.append("serial", selectedId);
 
-        const formData = new FormData();
-        formData.append("backup", file);
-        formData.append("serial", selectedDevice);
+          try {
+            const res = await fetch("/api/v1/import-backup", {
+              method: "POST",
+              body: form,
+              credentials: "include",
+            });
+            const result = await res.json();
 
-        try {
-          const response = await fetch("/api/v1/import-backup", {
-            method: "POST",
-            body: formData,
-            credentials: "include",
-          });
-
-          const result = await response.json();
-
-          if (result.success) {
-            setStatus("✅ Migration started");
-            // optional: reset file input? but we keep it for clarity
-            // disable file & select to avoid re-run? we keep disabled during import already.
-            // after success we could re-enable but keep it simple: stay in importing state for 1s then reset
-            setTimeout(() => {
-              isImporting = false;
-              setComponentVisibility();
-              setStatus("Ready");
-              clearStatusAfter(1500);
-            }, 800);
-          } else {
-            setStatus("❌ Import failed", true);
-            isImporting = false;
-            setComponentVisibility();
-            clearStatusAfter(2500);
+            if (result.success) {
+              setStatus("Import started successfully", "success");
+              setTimeout(() => {
+                setLoading(false);
+                clearAfter(2000);
+              }, 800);
+            } else {
+              setStatus(
+                "Import failed — " + (result.message || "unknown error"),
+                "error",
+              );
+              setLoading(false);
+              clearAfter(3500);
+            }
+          } catch (err) {
+            console.error(err);
+            setStatus("Network error during import", "error");
+            setLoading(false);
+            clearAfter(3500);
           }
-        } catch (err) {
-          console.error(err);
-          setStatus("Error during import", true);
-          isImporting = false;
-          setComponentVisibility();
-          clearStatusAfter(2500);
-        }
-      });
-
-      // initial call: set correct hidden states (device select hidden, loader hidden)
-      setComponentVisibility();
-
-      // additional: when file input changes due to cancel, we need to possibly reset
-      fileInput.addEventListener("click", () => {
-        // if user cancels file selection, fileInput.files will be empty; but "change" handles that.
-      });
-
-      // tiny improvement: if user picks same file again, still fetch devices
-      // also reset import button when file changes
-      const originalFileHandler = fileInput.addEventListener(
-        "change",
-        async () => {},
-      ); // already defined
-      // but we need to ensure import button hides when file changes without devices:
-      // already inside setComponentVisibility.
-
-      // add small UX: if devices already loaded and file present, show import only after device selected.
-      // ensure if file deleted, hide select & import
-      document.addEventListener("DOMContentLoaded", () => {
-        setComponentVisibility();
-      });
+        });
+      })();
     </script>
   </body>
 </html>
